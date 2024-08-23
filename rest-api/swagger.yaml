@@ -1,0 +1,570 @@
+openapi: 3.0.0
+info:
+  title: JIBB API
+  description: API documentation for JIBB web application
+  version: 1.0.0
+paths:
+  /v1/meetings:
+    post:
+      summary: Create a new meeting
+      description: Creates a new meeting with the provided details and returns the ID of the created meeting.
+      operationId: createMeeting
+      tags:
+        - Meetings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Meeting title.
+                  default: ""
+                isTemporary:
+                  type: boolean
+                  description: Meeting won't be saved in the dashboard.
+                  default: false
+                capacity:
+                  type: integer
+                  description: Number of allowed streams to the meeting.
+                  default: 2
+                  enum: [1, 2]
+                meetingType:
+                  type: integer
+                  description: Type of the meeting.
+                  default: 0
+                  enum: [0, 1]
+      responses:
+        '200':
+          description: Successfully created the meeting
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meetingId:
+                    type: string
+                    description: ID of the created meeting
+      security:
+        - jwtAuth: []
+    get:
+      summary: Get a list of meetings
+      description: Retrieves a list of meetings with optional pagination.
+      operationId: getMeetingList
+      tags:
+        - Meetings
+      parameters:
+        - name: pagination
+          in: header
+          required: false
+          schema:
+            type: string
+            description: JSON string of pagination parameters
+      responses:
+        '200':
+          description: Successfully retrieved the meeting list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meetings:
+                    type: array
+                    items:
+                      type: object
+                      description: List of meetings
+                  pagination:
+                    type: object
+                    description: Pagination details
+  /v1/meetings/{meetingId}:
+    delete:
+      summary: Delete a meeting
+      description: Deletes a specific meeting.
+      operationId: deleteMeeting
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+      responses:
+        '200':
+          description: Successfully deleted the meeting
+    get:
+      summary: Get meeting details
+      description: Retrieves details of a specific meeting.
+      operationId: getMeetingDetails
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+      responses:
+        '200':
+          description: Successfully retrieved the meeting details
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Object with meeting details
+    post:
+      summary: Update meeting details
+      description: Updates the details of a specific meeting.
+      operationId: updateMeeting
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: New title for the meeting
+                capacity:
+                  type: integer
+                  description: Updated capacity for the meeting
+      responses:
+        '200':
+          description: Successfully updated the meeting
+  /v1/meetings/{meetingId}/temp-shares:
+    post:
+      summary: Create a temporary share for a meeting
+      description: Creates a temporary share for a meeting with specific permissions and returns the share ID.
+      operationId: createTemporaryShare
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permission:
+                  type: integer
+                  description: Bitfield value for permissions (1 ImageRead, 2 ImageWrite, 4 AnnotationRead, 8 AnnotationWrite, 16 MeetingWrite)
+                expiry:
+                  type: integer
+                  description: Share time expiry in seconds
+                  default: 3600
+                auxData:
+                  type: object
+                  description: Object to include specific data in meeting share
+                  default: {}
+      responses:
+        '200':
+          description: Successfully created the temporary share
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shareId:
+                    type: string
+                    description: ID of the created share
+      security:
+        - jwtAuth: []
+  /v1/meetings/{meetingId}/temp-shares/{shareId}:
+    get:
+      summary: Get meeting token from temporary share ID
+      description: Retrieves a meeting token based on a temporary share ID.
+      operationId: getMeetingTokenFromTempShareId
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Share ID
+      responses:
+        '200':
+          description: Successfully retrieved the token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Meeting token
+  /v1/meetings/{meetingId}/images:
+    delete:
+      summary: Delete meeting images
+      description: Deletes images from a meeting.
+      operationId: deleteMeetingImages
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+        - name: mtoken
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Meeting token
+      responses:
+        '200':
+          description: Successfully deleted the images
+    get:
+      summary: Get meeting images
+      description: Retrieves a list of images from a meeting.
+      operationId: getMeetingImages
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+        - name: meetingToken
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Meeting token
+      responses:
+        '200':
+          description: Successfully retrieved the images
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: List of image URLs
+  /v1/meetings/{meetingId}/images/{imageId}:
+    get:
+      summary: Get a specific meeting image
+      description: Retrieves a specific image from a meeting.
+      operationId: getMeetingImage
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Image ID
+        - name: meetingToken
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Meeting token
+      responses:
+        '200':
+          description: Successfully retrieved the image
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Base64 encoded image data
+  /v1/meetings/{meetingId}/actions/start:
+    post:
+      summary: Start a meeting
+      description: Starts a meeting.
+      operationId: startMeeting
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+        - name: meetingToken
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Meeting token
+      responses:
+        '200':
+          description: Successfully started the meeting
+  /v1/meetings/{meetingId}/actions/end:
+    post:
+      summary: End a meeting
+      description: Ends a meeting.
+      operationId: endMeeting
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+        - name: meetingToken
+          in: header
+          required: true
+          schema:
+            type: string
+            description: Meeting token
+      responses:
+        '200':
+          description: Successfully ended the meeting
+  /v1/meetings/{meetingToken}/owner:
+    get:
+      summary: Check if the user is the meeting owner
+      description: Checks if the authenticated user is the owner of the specified meeting.
+      operationId: isMeetingOwner
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingToken
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting token
+      responses:
+        '200':
+          description: Successfully checked ownership
+          content:
+            application/json:
+              schema:
+                type: boolean
+                description: True if the user is the owner
+  /v1/meetings/{meetingId}/shares:
+    post:
+      summary: Create a meeting share
+      description: Creates a new share for a meeting with specific permissions.
+      operationId: createShare
+      tags:
+        - Meetings
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Meeting ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Email of the user to share the meeting with
+                permission:
+                  type: integer
+                  description: Permissions for the shared meeting (1 Read, 2 Write)
+      responses:
+        '200':
+          description: Successfully created the share
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Share ID
+  /v1/meetings/shares:
+    get:
+      summary: Get incoming and outgoing shares
+      description: Retrieves a list of meetings shared with the current user and meetings shared by the current user.
+      operationId: getShares
+      tags:
+        - Meetings
+      parameters:
+        - name: incoming
+          in: query
+          required: false
+          schema:
+            type: boolean
+            description: Flag to retrieve incoming shares
+        - name: outgoing
+          in: query
+          required: false
+          schema:
+            type: boolean
+            description: Flag to retrieve outgoing shares
+      responses:
+        '200':
+          description: Successfully retrieved the shares
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  description: List of shares
+  /v1/meetings/shares/{shareId}:
+    delete:
+      summary: Delete a meeting share
+      description: Deletes a specific meeting share.
+      operationId: deleteShare
+      tags:
+        - Meetings
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: Share ID
+      responses:
+        '200':
+          description: Successfully deleted the share
+    patch:
+      summary: Update meeting share permissions
+      description: Updates the permissions for a specific meeting share.
+      operationId: updateShare
+      tags:
+        - Meetings
+      parameters:
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: integer
+            description: Share ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permission:
+                  type: integer
+                  description: New permissions for the shared meeting
+      responses:
+        '200':
+          description: Successfully updated the share
+  /v1/meetings/url-shortener:
+    post:
+      summary: Create a short URL for a meeting
+      description: Creates a short URL for a meeting.
+      operationId: createShortUrl
+      tags:
+        - Meetings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: URL to shorten
+      responses:
+        '200':
+          description: Successfully created the short URL
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Short URL
+  /v1/meetings/url-shortener/{hashKey}:
+    get:
+      summary: Get the full URL from a short URL
+      description: Retrieves the full URL based on the hash key of the short URL.
+      operationId: getFullUrl
+      tags:
+        - Meetings
+      parameters:
+        - name: hashKey
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Hash key of the short URL
+      responses:
+        '200':
+          description: Successfully retrieved the full URL
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Full URL
+  /v1/meetings/url-shortener/auth/{hashKey}:
+    post:
+      summary: Authorize short meeting URL
+      description: Authorizes access to a short meeting URL with a password.
+      operationId: authorizeShortMeeting
+      tags:
+        - Meetings
+      parameters:
+        - name: hashKey
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Hash key of the short URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  description: Password for authorization
+      responses:
+        '200':
+          description: Successfully authorized access
+          content:
+            application/json:
+              schema:
+                type: boolean
+                description: True if authorized, false otherwise
+components:
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
